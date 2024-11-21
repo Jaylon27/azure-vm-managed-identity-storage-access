@@ -22,3 +22,9 @@ variable "admin_password" {
   type        = string
   sensitive   = true
 }
+
+# Variable to hold the SSH public key content for use in configuring the Linux virtual machine.
+# The value is passed dynamically from the pipeline during deployment.
+variable "public_key" {
+  type = string
+}
