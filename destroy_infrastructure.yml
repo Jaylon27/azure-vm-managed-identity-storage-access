@@ -1,0 +1,45 @@
+trigger: none
+pr: none 
+
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    
+    # Download the SSH public key from a secure file stored in Azure DevOps
+    - task: DownloadSecureFile@1
+      name: sshKey
+      displayName: Download SSH Public Key
+      inputs:
+        secureFile: 'new_id_rsa.pub'
+        
+    # Debug the content of the SSH public key and set it as a pipeline variable
+    - script: |
+        echo "Downloaded Public Key:"
+        ssh_key=$(cat $(Agent.TempDirectory)/new_id_rsa.pub)
+        echo "##vso[task.setvariable variable=ssh_public_key]$ssh_key"
+      displayName: Debug SSH Key Content
+    
+    # Initialize Terraform with Azure backend configuration
+    - task: TerraformTaskV4@4
+      displayName: Tf init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: '$(SERVICECONNECTION)'
+        backendAzureRmResourceGroupName: 'managedidsandgov-resources'
+        backendAzureRmStorageAccountName: 'idsandgovstorage'
+        backendAzureRmContainerName: 'prod-tfstate'
+        backendAzureRmKey: 'prod.terraform.tfstate'
+    
+    # Destroy the infrastructure managed by Terraform using the SSH public key
+    - task: TerraformTaskV4@4
+      displayName: Tf destroy
+      inputs:
+        provider: 'azurerm'
+        command: 'destroy'
+        commandOptions: '--auto-approve -var "public_key=$(ssh_public_key)"'
+        environmentServiceNameAzureRM: '$(SERVICECONNECTION)'
