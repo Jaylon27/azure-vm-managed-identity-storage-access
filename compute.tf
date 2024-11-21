@@ -10,7 +10,7 @@ resource "azurerm_linux_virtual_machine" "example" {
 
   admin_ssh_key {
     username   = var.admin_username
-    public_key = file("~/.ssh/new_id_rsa.pub")
+    public_key = var.public_key
   }
 
   # Source image reference
