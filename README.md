@@ -1,17 +1,17 @@
 # Secure Azure VM Access with Managed Identity and Terraform
 
 ## Problem Statement
-At **FinSecure Inc.**, a leading financial services provider, the cloud security team identified a significant issue in the infrastructure. Their Azure Virtual Machines (VMs) were accessing sensitive resources such as Azure Storage accounts and Key Vault using hardcoded credentials. This practice was risky, especially for a company handling sensitive financial data, as it exposed the environment to potential security breaches and compliance violations.
+At **XYZ Inc.**, a leading financial services provider, the cloud security team identified a significant issue in the infrastructure. Their Azure Virtual Machines (VMs) were accessing sensitive resources such as Azure Storage accounts and Key Vault using hardcoded credentials. This practice was risky, especially for a company handling sensitive financial data, as it exposed the environment to potential security breaches and compliance violations.
 
 The team had also noticed challenges with auditing access and ensuring secure management of VMs. They needed a solution that would:
 - Eliminate the use of hardcoded credentials.
 - Ensure secure, auditable access to critical resources without compromising security.
 - Allow secure management of the VMs, without exposing them directly to the internet.
 
-As a **Cloud Infrastructure Engineer** at FinSecure Inc., I was tasked with resolving these issues. The goal was to redesign the environment to securely manage VM access and eliminate hardcoded credentials.
+As a **Cloud Infrastructure Engineer** at XYZ Inc., I was tasked with resolving these issues. The goal was to redesign the environment to securely manage VM access and eliminate hardcoded credentials.
 
 ## Solution
-To solve the problem, I:
+To address the security and management challenges, I implemented the following solution:
 1. Deployed a **Linux VM** in a secure network environment with **SSH key-based authentication**.
 2. Assigned a **managed identity** to the VM, granting it access to an Azure Storage Account with the **Storage Blob Data Contributor** role.
 3. Set up a **Bastion host** for secure access to the VM over SSH without exposing it directly to the internet.
@@ -56,70 +56,81 @@ After deploying the infrastructure, I ran several commands inside the Linux VM t
 ### 1. Testing Managed Identity Authentication:
 To verify that the system-assigned managed identity was correctly enabled on the VM, I used the Azure CLI command:
 
-az login --identity 
+`az login --identity`
 
 This command authenticates the VM using its managed identity without the need for any stored credentials.
 
 ### 2. Verifying Blob Storage Access: 
 I ran the following command to list the blobs in the Azure Storage Account to ensure that the VM’s managed identity had the necessary permissions (i.e., Storage Blob Data Contributor role) to interact with the storage account:
-az storage blob list --account-name manidsandgovstorage --container-name manidsandgovstoragecontainer --auth-mode login
+
+`az storage blob list --account-name manidsandgovstorage --container-name manidsandgovstoragecontainer --auth-mode login`
+
 This command returned an empty list, indicating that there were no blobs in the container.
 
 ### 3. Downloading a Random Image: 
 To test the VM’s ability to download files from the internet, I used the curl command to fetch a random image:
-curl -o random-image.png https://via.placeholder.com/150
+
+`curl -o random-image.png https://via.placeholder.com/150`
+
 This command downloaded the image and saved it as random-image.png.
 
 ### 4.Checking the File in the File System: 
 I ran the following command to ensure that the downloaded file was correctly saved to the VM’s file system:
-ls -l
+
+`ls -l`
+
 The output confirmed that random-image.png was successfully downloaded and stored on the VM.
 
 ### 5. Uploading the Image to Azure Blob Storage: 
 Finally, I uploaded the random-image.png to the Azure Storage Blob container using the Azure CLI:
-az storage blob upload --account-name manidsandgovstorage --container-name manidsandgovstoragecontainer --name random-image.png --file random-image.png --auth-mode login
+
+`az storage blob upload --account-name manidsandgovstorage --container-name manidsandgovstoragecontainer --name random-image.png --file random-image.png --auth-mode login`
+
 This command successfully uploaded the image to the storage container, confirming that the VM could interact with the storage account using its managed identity.
 
-## Technologies & Tools Used:
+## Technologies & Tools Used
 
-Terraform:
+### Terraform
+- Used for Infrastructure as Code (IaC) to define and manage Azure resources.
+- Automated the provisioning of infrastructure, including the Linux virtual machine (VM), storage account, network, and Bastion host.
 
-Used for Infrastructure as Code (IaC) to define and manage Azure resources. With Terraform, I automated the provisioning of infrastructure, including the Linux virtual machine (VM), storage account, network, and Bastion host.
+### Azure DevOps
+- CI/CD pipeline automation tool that handles the Terraform deployment process.
+- Ensured consistent and secure infrastructure deployment, including secure SSH key handling and pipeline integration for Terraform operations.
 
-Azure DevOps:
+### Azure Linux Virtual Machine (VM)
+- A Linux-based virtual machine was deployed with SSH key authentication for secure access.
+- The VM was assigned a system-assigned managed identity to securely access Azure resources without needing hardcoded credentials.
+- Used as the core computing resource for testing and interacting with other Azure services.
 
-CI/CD pipeline automation tool that handles the Terraform deployment process. It ensured that the entire infrastructure was deployed consistently and securely, including secure SSH key handling and pipeline integration for Terraform operations.
+### Azure Virtual Network (VNet)
+- Defined a network boundary for Azure resources.
+- Provided connectivity between the Linux VM and other resources, while adhering to security best practices such as segmentation and isolation of traffic.
 
-Azure Linux Virtual Machine (VM):
+### Azure Subnet
+- Created subnets within the Virtual Network to segment traffic.
+- Placed the Linux VM in one subnet, and created an Azure Bastion subnet for secure, private access to the VM.
 
-A Linux-based virtual machine was deployed with SSH key authentication for secure access. The VM was assigned a system-assigned managed identity to access Azure resources securely without needing hardcoded credentials. The Linux VM was used as the core computing resource for testing and interacting with other Azure services.
+### Azure Bastion
+- Provides secure, private access to the Linux VM without exposing it to the public internet.
+- Eliminates the need for a public IP address and adds an extra layer of security by allowing access to the VM only via Bastion.
 
-Azure Virtual Network (VNet):
+### Azure Managed Identity
+- The system-assigned managed identity enables the Linux VM to securely access Azure resources (e.g., Azure Storage) without the need for stored credentials.
+- Follows best practices in identity and access management (IAM) by eliminating hardcoded credentials.
 
-Used to define a network boundary for Azure resources. The virtual network provided connectivity between the Linux VM and other resources while adhering to security best practices, such as segmentation and isolation of traffic.
+### Azure Storage Account
+- Used to securely store and access blobs and other data.
+- The Linux VM’s managed identity was granted the `Storage Blob Data Contributor` role to interact with the storage account securely.
 
-Azure Subnet:
+### Azure CLI
+- Used within the Linux VM to test managed identity authentication and interact with Azure resources.
+- Commands like `az login --identity`, `az storage blob list`, and `az storage blob upload` were executed to verify access and functionality.
 
-Subnets were created within the Virtual Network to segment traffic. The Linux VM was placed within a subnet, and an Azure Bastion subnet was also created for secure and private access to the VM.
+### Azure Role-Based Access Control (RBAC)
+- Implemented via Terraform to assign the necessary roles (e.g., `Storage Blob Data Contributor`) to the Linux VM’s managed identity.
+- Ensured that the VM had the appropriate permissions for secure access to Azure Storage.
 
-Azure Bastion:
-
-Azure Bastion provides secure, private access to the Linux virtual machine (VM) without exposing it to the public internet. This eliminates the need for a public IP address and adds an extra layer of security by allowing access to the VM only via Bastion.
-
-Azure Managed Identity:
-
-The system-assigned managed identity for the Linux VM enables it to access Azure resources (such as Azure Storage) securely without the need for storing credentials in the VM, adhering to best practices in identity and access management (IAM).
-Azure Storage Account:
-
-A Storage Account was used to securely store and access blobs and other data. The managed identity of the Linux VM was granted the Storage Blob Data Contributor role to interact with the storage account without compromising security.
-
-Azure CLI:
-
-The Azure CLI was used within the Linux VM to test the managed identity authentication and interact with Azure resources. Commands like az login --identity, az storage blob list, and az storage blob upload were used to verify access and functionality.
-
-Azure Role-Based Access Control (RBAC):
-
-RBAC was implemented using Terraform to assign the necessary roles (e.g., Storage Blob Data Contributor) to the Linux VM's managed identity, ensuring the right permissions were in place for secure access to Azure Storage.
-
-SSH Key Authentication:
-SSH key-based authentication was used to securely access the Linux VM. This eliminates the need for password-based authentication, ensuring that access is controlled via private/public key pairs, which is a more secure method for Linux environments.
+### SSH Key Authentication
+- SSH key-based authentication was used to securely access the Linux VM.
+- Eliminated the need for password-based authentication, ensuring that access is controlled via private/public key pairs, which is a more secure method for Linux environments.
